@@ -21,6 +21,39 @@ export default defineConfig(({ mode }) => {
       watch: {
         // 确保监视monorepo中其他包的变化
         ignored: ['!**/node_modules/@prompt-optimizer/**']
+      },
+      proxy: {
+        // 代理API请求到本地代理服务器
+        '/api/proxy': {
+          target: 'http://127.0.0.1:3001',
+          changeOrigin: true,
+          rewrite: (path) => path
+        },
+        '/api/stream': {
+          target: 'http://127.0.0.1:3001',
+          changeOrigin: true,
+          rewrite: (path) => path
+        },
+        // 添加代理状态检测API
+        '/api/vercel-status': {
+          target: 'http://127.0.0.1:3001',
+          changeOrigin: true,
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // 直接返回可用状态
+              res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              });
+              res.end(JSON.stringify({
+                status: 'available',
+                environment: 'development',
+                proxySupport: true,
+                version: '1.0.0'
+              }));
+            });
+          }
+        }
       }
     },
     build: {
